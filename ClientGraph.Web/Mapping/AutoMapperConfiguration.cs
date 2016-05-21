@@ -12,6 +12,8 @@ namespace ClientGraph.Mapping
                 cfg.AddProfile<ClientProfile>();
                 cfg.AddProfile<ContactProfile>();
                 cfg.AddProfile<PracticeProfile>();
+
+                cfg.AddProfile<RelationshipProfile>();
             });
         }
     }

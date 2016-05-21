@@ -6,6 +6,8 @@ namespace ClientGraph.Domain
     {
         public Guid Id { get; set; }
 
-        public abstract string GetDescription();
+        public string Name => GetDescription();
+
+        protected abstract string GetDescription();
     }
 }

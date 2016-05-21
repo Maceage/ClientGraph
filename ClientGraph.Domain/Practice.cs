@@ -6,7 +6,7 @@
         public string EmailAddress { get; set; }
         public string WebsiteUrl { get; set; }
 
-        public override string GetDescription()
+        protected override string GetDescription()
         {
             return CompanyName;
         }

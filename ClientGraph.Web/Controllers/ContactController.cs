@@ -4,7 +4,7 @@ using ClientGraph.Services;
 
 namespace ClientGraph.Controllers
 {
-    public class ContactController : ControllerBase<ContactModel, Contact, ContactService>
+    public class ContactController : EntityControllerBase<ContactModel, Contact, ContactService>
     {
     }
 }

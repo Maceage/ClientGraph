@@ -4,7 +4,7 @@ using ClientGraph.Services;
 
 namespace ClientGraph.Controllers
 {
-    public class PracticeController : ControllerBase<PracticeModel, Practice, PracticeService>
+    public class PracticeController : EntityControllerBase<PracticeModel, Practice, PracticeService>
     {
     }
 }

@@ -8,14 +8,14 @@ using ClientGraph.Services.Interfaces;
 
 namespace ClientGraph.Controllers
 {
-    public abstract class ControllerBase<TModel, TEntity, TService> : Controller
+    public abstract class EntityControllerBase<TModel, TEntity, TService> : Controller
         where TModel : ModelBase
         where TEntity : EntityBase
         where TService : IEntityService<TEntity>
     {
         private readonly TService _entityService;
 
-        protected ControllerBase()
+        protected EntityControllerBase()
         {
             _entityService = Activator.CreateInstance<TService>();
         }

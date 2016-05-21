@@ -1,0 +1,88 @@
+﻿@using ClientGraph.Domain.Enumerations
+@model ClientGraph.Models.RelationshipModel
+
+@{
+    ViewBag.Title = "Create Relationship";
+}
+
+<h2>Create Relationship</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <h4>New Relationship</h4>
+        <hr/>
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            <div class="col-md-2">
+                @Html.LabelFor(model => model.ParentEntityType)
+            </div>
+            <div class="col-md-4">
+                @Html.EnumDropDownListFor(model => model.ParentEntityType, new { onchange = "this.form.submit();" })
+            </div>
+
+            <div class="col-md-2">
+                @Html.LabelFor(model => model.ChildEntityType)
+            </div>
+            <div class="col-md-4">
+                @Html.EnumDropDownListFor(model => model.ChildEntityType, new { onchange = "this.form.submit();" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-2">
+                @Html.LabelFor(model => model.ParentEntityId)
+            </div>
+            <div class="col-md-4">
+                @if (Model?.ParentEntityType != null)
+                {
+                    switch (Model.ParentEntityType)
+                    {
+                        case EntityType.Client:
+                            @Html.DropDownListFor(model => model.ParentEntityId, new SelectList(ViewBag.Clients, "Id", "Name"))
+                            break;
+                        case EntityType.Contact:
+                            @Html.DropDownListFor(model => model.ParentEntityId, new SelectList(ViewBag.Contacts, "Id", "Name"))
+                            break;
+                        case EntityType.Practice:
+                            @Html.DropDownListFor(model => model.ParentEntityId, new SelectList(ViewBag.Practices, "Id", "Name"))
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+            </div>
+
+            <div class="col-md-2">
+                @Html.LabelFor(model => model.ChildEntityId)
+            </div>
+            <div class="col-md-4">
+                @if (Model?.ChildEntityType != null)
+                {
+                    switch (Model.ChildEntityType)
+                    {
+                        case EntityType.Client:
+                            @Html.DropDownListFor(model => model.ChildEntityId, new SelectList(ViewBag.Clients, "Id", "Name"))
+                            break;
+                        case EntityType.Contact:
+                            @Html.DropDownListFor(model => model.ChildEntityId, new SelectList(ViewBag.Contacts, "Id", "Name"))
+                            break;
+                        case EntityType.Practice:
+                            @Html.DropDownListFor(model => model.ChildEntityId, new SelectList(ViewBag.Practices, "Id", "Name"))
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-offset-10 col-md-2">
+            <input name="submitType" type="submit" value="Create" class="btn btn-default"/>
+        </div>
+    </div>
+}

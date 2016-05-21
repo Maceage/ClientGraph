@@ -6,7 +6,7 @@
         public string LastName { get; set; }
         public string TelephoneNumber { get; set; }
 
-        public override string GetDescription()
+        protected override string GetDescription()
         {
             return $"{FirstName} {LastName}";
         }

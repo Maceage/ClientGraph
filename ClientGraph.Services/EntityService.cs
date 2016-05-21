@@ -118,7 +118,7 @@ namespace ClientGraph.Services
 
             Document document = new Document();
             document[PrimaryKey] = entity.Id.ToString();
-            document["description"] = entity.GetDescription();
+            document["description"] = entity.Name;
 
             clientGraphTable.PutItem(document);
         }

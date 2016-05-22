@@ -59,8 +59,7 @@
             </th>
             <th></th>
         </tr>
-
-        @foreach (var item in Model.Versions)
+        @foreach (var item in Model.Versions.OrderByDescending(v => v.VersionNumber))
         {
             <tr>
                 <td>
@@ -70,7 +69,10 @@
                     @Html.DisplayFor(modelItem => item.LastModified)
                 </td>
                 <td>
-                    @Html.ActionLink("Restore", "RestoreVersion", new { id = item.VersionId })
+                    @if (item.VersionNumber != Model.Versions.Count)
+                    {
+                        @Html.ActionLink("Restore", "RestoreVersion", new { id = Model.Id, versionId = item.VersionId })
+                    }
                 </td>
             </tr>
         }

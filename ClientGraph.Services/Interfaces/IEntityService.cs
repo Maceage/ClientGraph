@@ -12,5 +12,6 @@ namespace ClientGraph.Services.Interfaces
         Task<T> GetByIdAsync(Guid entityId);
         Task<bool> SaveAsync(T entity);
         Task<bool> DeleteAsync(Guid entityId);
+        Task RestoreVersionAsync(Guid entityId, string versionId);
     }
 }

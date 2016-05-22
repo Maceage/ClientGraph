@@ -113,6 +113,29 @@ namespace ClientGraph.Services
             return isDeleted;
         }
 
+        public async Task RestoreVersionAsync(Guid entityId, string versionId)
+        {
+            GetObjectRequest getObjectRequest = new GetObjectRequest
+            {
+                BucketName = _bucketPath,
+                Key = entityId.ToString(),
+                VersionId = versionId
+            };
+
+            string entityJson;
+
+            using (GetObjectResponse response = await _s3Client.GetObjectAsync(getObjectRequest).ConfigureAwait(false))
+            using (Stream responseStream = response.ResponseStream)
+            using (StreamReader reader = new StreamReader(responseStream))
+            {
+                entityJson = reader.ReadToEnd();
+            }
+
+            PutObjectRequest putObjectRequest = new PutObjectRequest { BucketName = _bucketPath, Key = entityId.ToString(), ContentBody = entityJson };
+
+            _s3Client.PutObject(putObjectRequest);
+        }
+
         private async Task<T> LoadEntityFromS3Async(Guid entityId)
         {
             GetObjectRequest getObjectRequest = new GetObjectRequest
@@ -178,9 +201,9 @@ namespace ClientGraph.Services
 
         private void SaveEntityToS3(T entity)
         {
-            string clientJson = JsonConvert.SerializeObject(entity);
+            string entityJson = JsonConvert.SerializeObject(entity);
 
-            PutObjectRequest putObjectRequest = new PutObjectRequest { BucketName = _bucketPath, Key = entity.Id.ToString(), ContentBody = clientJson };
+            PutObjectRequest putObjectRequest = new PutObjectRequest { BucketName = _bucketPath, Key = entity.Id.ToString(), ContentBody = entityJson };
 
             _s3Client.PutObject(putObjectRequest);
         }

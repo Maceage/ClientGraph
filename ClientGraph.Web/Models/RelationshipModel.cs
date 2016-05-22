@@ -15,6 +15,8 @@ namespace ClientGraph.Models
         [Required]
         public Guid? ParentEntityId { get; set; }
 
+        public string ParentEntityName { get; set; }
+
         [DisplayName("Child Entity Type")]
         [Required]
         public EntityType? ChildEntityType { get; set; }
@@ -22,6 +24,8 @@ namespace ClientGraph.Models
         [DisplayName("Child Entity")]
         [Required]
         public Guid? ChildEntityId { get; set; }
+
+        public string ChildEntityName { get; set; }
 
         [DisplayName("Relationship Type")]
         [Required]

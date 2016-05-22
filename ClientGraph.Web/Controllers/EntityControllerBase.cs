@@ -5,6 +5,7 @@ using System.Web.Mvc;
 using AutoMapper;
 using ClientGraph.Domain;
 using ClientGraph.Models;
+using ClientGraph.Services;
 using ClientGraph.Services.Interfaces;
 
 namespace ClientGraph.Controllers
@@ -15,10 +16,12 @@ namespace ClientGraph.Controllers
         where TService : IEntityService<TEntity>
     {
         private readonly TService _entityService;
+        private readonly RelationshipService _relationshipService;
 
         protected EntityControllerBase()
         {
             _entityService = Activator.CreateInstance<TService>();
+            _relationshipService = new RelationshipService();
         }
 
         public async Task<ActionResult> Index()
@@ -80,6 +83,13 @@ namespace ClientGraph.Controllers
         public async Task<ViewResult> Details(Guid id)
         {
             TModel entityModel = await GetModelAsync(id).ConfigureAwait(false);
+
+            if (entityModel != null)
+            {
+                var relationships = await _relationshipService.GetRelationshipsAsync(id).ConfigureAwait(false);
+
+                entityModel.Relationships = Mapper.Map<IList<RelationshipModel>>(relationships);
+            }
 
             return View(entityModel);
         }

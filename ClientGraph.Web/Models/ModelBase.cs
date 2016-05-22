@@ -10,5 +10,7 @@ namespace ClientGraph.Models
         public string Name { get; set; }
 
         public IList<VersionModel> Versions { get; set; }
+
+        public IList<RelationshipModel> Relationships { get; set; }
     }
 }

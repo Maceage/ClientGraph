@@ -8,7 +8,6 @@ namespace ClientGraph.Mapping.Profiles
     {
         protected override void Configure()
         {
-            CreateMap<Contact, ContactModel>();
             CreateMap<Contact, ContactModel>().ReverseMap();
         }
     }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using ClientGraph.Domain;
 using ClientGraph.Domain.Enumerations;
@@ -55,6 +57,42 @@ namespace ClientGraph.Services
             }
         }
 
+        public async Task<IList<EntityRelationship>> GetRelationshipsAsync(Guid entityId)
+        {
+            List<EntityRelationship> entityRelationships = new List<EntityRelationship>();
+
+            using (GraphClient graphClient = CreateClient())
+            {
+                ////MATCH(parentEntity { entityId: "f1bdb673-0749-4135-b83d-6bb3e8624926"})-[entityRelationship] - (childEntity)
+                ////RETURN parentEntity, entityRelationship, childEntity
+
+                var query = graphClient.Cypher
+                    .Match("(parentEntity {entityId: {entityId} })-[entityRelationship]-(childEntity)")
+                    .WithParams(new { entityId })
+                    .Return((parentEntity, entityRelationship, childEntity) => new
+                    {
+                        ParentEntityNode = parentEntity.As<EntityNode>(),
+                        ChildEntityNode = childEntity.As<EntityNode>(),
+                        RelationshipType = entityRelationship.Type()
+                    });
+
+                var relationships = await query.ResultsAsync.ConfigureAwait(false);
+
+                entityRelationships.AddRange(relationships.Select(relationship => new EntityRelationship
+                {
+                    ParentEntityId = relationship.ParentEntityNode.EntityId,
+                    ParentEntityType = relationship.ParentEntityNode.Type,
+                    ParentEntityName = relationship.ParentEntityNode.Name,
+                    ChildEntityId = relationship.ChildEntityNode.EntityId,
+                    ChildEntityType = relationship.ChildEntityNode.Type,
+                    ChildEntityName = relationship.ChildEntityNode.Name,
+                    RelationshipType = GetRelationshipTypeEnum(relationship.RelationshipType)
+                }));
+            }
+
+            return entityRelationships;
+        }
+
         private static GraphClient CreateClient()
         {
             GraphClient graphClient = new GraphClient(new Uri(GrapheneEndpoint), GrapheneUsername, GraphenePassword);
@@ -93,6 +131,21 @@ namespace ClientGraph.Services
                     return "CONTACT_OF";
                 case RelationshipType.BusinessWith:
                     return "BUSINESS_WITH";
+                default:
+                    throw new InvalidEnumArgumentException(nameof(relationshipType));
+            }
+        }
+
+        private static RelationshipType GetRelationshipTypeEnum(string relationshipType)
+        {
+            switch (relationshipType)
+            {
+                case "CLIENT_OF":
+                    return RelationshipType.ClientOf;
+                case "CONTACT_OF":
+                    return RelationshipType.ContactOf;
+                case "BUSINESS_WITH":
+                    return RelationshipType.BusinessWith;
                 default:
                     throw new InvalidEnumArgumentException(nameof(relationshipType));
             }

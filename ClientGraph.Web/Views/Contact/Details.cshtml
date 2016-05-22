@@ -1,4 +1,5 @@
-﻿@model ClientGraph.Models.ContactModel
+﻿@using ClientGraph.Domain.Enumerations
+@model ClientGraph.Models.ContactModel
 
 @{
     ViewBag.Title = "Contact Details";
@@ -44,6 +45,51 @@
         </dd>
 
     </dl>
+</div>
+
+<div>
+    <hr />
+    <h4>Relationships</h4>
+    <hr />
+    <table class="table">
+        <tr>
+            <th>
+                Entity Name
+            </th>
+            <th>
+                Entity Type
+            </th>
+            <th>
+                Relationship Type
+            </th>
+        </tr>
+
+        @foreach (var item in Model.Relationships.OrderByDescending(r => r.ChildEntityName))
+        {
+            <tr>
+                <td>
+                    @switch (item.ChildEntityType)
+                    {
+                        case EntityType.Client:
+                            @Html.ActionLink(item.ChildEntityName, "Details", "Client", new { id = item.ChildEntityId }, null)
+                            break;
+                        case EntityType.Contact:
+                            @Html.ActionLink(item.ChildEntityName, "Details", "Contact", new { id = item.ChildEntityId }, null)
+                            break;
+                        case EntityType.Practice:
+                            @Html.ActionLink(item.ChildEntityName, "Details", "Practice", new { id = item.ChildEntityId }, null)
+                            break;
+                    }
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ChildEntityType)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.RelationshipType)
+                </td>
+            </tr>
+        }
+    </table>
 </div>
 
 <div>

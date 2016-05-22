@@ -63,9 +63,6 @@ namespace ClientGraph.Services
 
             using (GraphClient graphClient = CreateClient())
             {
-                ////MATCH(parentEntity { entityId: "f1bdb673-0749-4135-b83d-6bb3e8624926"})-[entityRelationship] - (childEntity)
-                ////RETURN parentEntity, entityRelationship, childEntity
-
                 var query = graphClient.Cypher
                     .Match("(parentEntity {entityId: {entityId} })-[entityRelationship]-(childEntity)")
                     .WithParams(new { entityId })

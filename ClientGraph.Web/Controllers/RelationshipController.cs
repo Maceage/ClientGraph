@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using AutoMapper;
 using ClientGraph.Domain;
@@ -31,11 +32,11 @@ namespace ClientGraph.Controllers
         }
 
         [HttpPost]
-        public ActionResult Create(string submitType, RelationshipModel relationshipModel)
+        public async Task<ViewResult> Create(string submitType, RelationshipModel relationshipModel)
         {
-            ViewBag.Clients = GetClients();
-            ViewBag.Contacts = GetContacts();
-            ViewBag.Practices = GetPractices();
+            ViewBag.Clients = await GetClientsAsync().ConfigureAwait(false);
+            ViewBag.Contacts = await GetContactsAsync().ConfigureAwait(false);
+            ViewBag.Practices = await GetPracticesAsync().ConfigureAwait(false);
 
             if (submitType == "Create")
             {
@@ -43,30 +44,30 @@ namespace ClientGraph.Controllers
                 {
                     EntityRelationship entityRelationship = Mapper.Map<EntityRelationship>(relationshipModel);
 
-                    _relationshipService.CreateRelationship(entityRelationship);
+                    await _relationshipService.CreateRelationshipAsync(entityRelationship).ConfigureAwait(false);
                 }
             }
 
             return View(relationshipModel);
         }
 
-        private IList<ClientModel> GetClients()
+        private async Task<IList<ClientModel>> GetClientsAsync()
         {
-            IList<Client> clients = _clientService.GetAll();
+            IList<Client> clients = await _clientService.GetAllAsync().ConfigureAwait(false);
 
             return Mapper.Map<IList<ClientModel>>(clients);
         }
 
-        private IList<ContactModel> GetContacts()
+        private async Task<IList<ContactModel>> GetContactsAsync()
         {
-            IList<Contact> contacts = _contactService.GetAll();
+            IList<Contact> contacts = await _contactService.GetAllAsync().ConfigureAwait(false);
 
             return Mapper.Map<IList<ContactModel>>(contacts);
         }
 
-        private IList<PracticeModel> GetPractices()
+        private async Task<IList<PracticeModel>> GetPracticesAsync()
         {
-            IList<Practice> practices = _practiceService.GetAll();
+            IList<Practice> practices = await _practiceService.GetAllAsync().ConfigureAwait(false);
 
             return Mapper.Map<IList<PracticeModel>>(practices);
         }

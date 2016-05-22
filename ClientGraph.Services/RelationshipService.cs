@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using ClientGraph.Domain;
 using ClientGraph.Domain.Enumerations;
 using Neo4jClient;
@@ -29,31 +30,32 @@ namespace ClientGraph.Services
             _practiceService = practiceService;
         }
 
-        public void CreateRelationship(EntityRelationship entityRelationship)
+        public async Task CreateRelationshipAsync(EntityRelationship entityRelationship)
         {
             EntityType parentEntityType = entityRelationship.ParentEntityType;
             EntityType childEntityType = entityRelationship.ChildEntityType;
 
-            EntityBase parentEntityBase = GetEntity(parentEntityType, entityRelationship.ParentEntityId);
-            EntityBase childEntityBase = GetEntity(childEntityType, entityRelationship.ChildEntityId);
+            EntityBase parentEntityBase = await GetEntityAsync(parentEntityType, entityRelationship.ParentEntityId).ConfigureAwait(false);
+            EntityBase childEntityBase = await GetEntityAsync(childEntityType, entityRelationship.ChildEntityId).ConfigureAwait(false);
 
-            EntityNode parentNode = CreateNode(parentEntityType, parentEntityBase);
-            EntityNode childNode = CreateNode(childEntityType, childEntityBase);
+            EntityNode parentNode = await CreateNodeAsync(parentEntityType, parentEntityBase).ConfigureAwait(false);
+            EntityNode childNode = await CreateNodeAsync(childEntityType, childEntityBase).ConfigureAwait(false);
 
             using (GraphClient graphClient = CreateClient())
             {
                 string relationshipTypeString = GetRelationshipTypeString(entityRelationship.RelationshipType);
 
-                 graphClient.Cypher
+                await graphClient.Cypher
                     .Match("(pe:" + parentEntityType + ")", "(ce:" + childEntityType + ")")
                     .Where((EntityNode pe) => pe.EntityId == parentNode.EntityId)
                     .AndWhere((EntityNode ce) => ce.EntityId == childNode.EntityId)
                     .CreateUnique("(ce)-[:" + relationshipTypeString + "]->(pe)")
-                    .ExecuteWithoutResults();
+                    .ExecuteWithoutResultsAsync()
+                    .ConfigureAwait(false);
             }
         }
 
-        public void DeleteRelationship(EntityBase parent, EntityBase child)
+        public void DeleteRelationshipAsync(EntityBase parent, EntityBase child)
         {
         }
 
@@ -67,18 +69,19 @@ namespace ClientGraph.Services
             return graphClient;
         }
 
-        private static EntityNode CreateNode(EntityType entityType, EntityBase entity)
+        private static async Task<EntityNode> CreateNodeAsync(EntityType entityType, EntityBase entity)
         {
             var entityNode = new EntityNode { EntityId = entity.Id, Name = entity.Name, Type = entityType };
 
             using (GraphClient graphClient = CreateClient())
             {
-                graphClient.Cypher
+                await graphClient.Cypher
                     .Merge("(entity:" + entityType + " {entityId: {entityId} })")
                     .OnCreate()
                     .Set("entity = {newEntity}")
                     .WithParams(new { entityId = entityNode.EntityId, newEntity = entityNode })
-                    .ExecuteWithoutResults();
+                    .ExecuteWithoutResultsAsync()
+                    .ConfigureAwait(false);
             }
 
             return entityNode;
@@ -99,16 +102,16 @@ namespace ClientGraph.Services
             }
         }
 
-        private EntityBase GetEntity(EntityType entityType, Guid entityId)
+        private async Task<EntityBase> GetEntityAsync(EntityType entityType, Guid entityId)
         {
             switch (entityType)
             {
                 case EntityType.Client:
-                    return _clientService.GetById(entityId);
+                    return await _clientService.GetByIdAsync(entityId).ConfigureAwait(false);
                 case EntityType.Contact:
-                    return _contactService.GetById(entityId);
+                    return await _contactService.GetByIdAsync(entityId).ConfigureAwait(false);
                 case EntityType.Practice:
-                    return _practiceService.GetById(entityId);
+                    return await _practiceService.GetByIdAsync(entityId).ConfigureAwait(false);
                 default:
                     throw new InvalidEnumArgumentException(nameof(entityType));
             }

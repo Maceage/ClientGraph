@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
@@ -35,33 +35,44 @@ namespace ClientGraph.Services
             BucketName = BucketPrefix + bucketName;
         }
 
-        public IList<T> GetAll()
+        public async Task<IList<T>> GetAllAsync()
         {
+            IList<T> entities = new List<T>();
+
             ScanRequest scanRequest = new ScanRequest(TableName);
 
-            ScanResponse response = _dynamoDbClient.Scan(scanRequest);
+            ScanResponse response = await _dynamoDbClient.ScanAsync(scanRequest).ConfigureAwait(false);
 
-            return response.Items
-                .Select(attributeValues => attributeValues[PrimaryKey])
-                .Select(entityIdAttributeValue => entityIdAttributeValue.S)
-                .Select(LoadEntityFromS3)
-                .Where(e => e != null)
-                .ToList();
+            foreach (var item in response.Items)
+            {
+                AttributeValue entityIdAttributeValue = item[PrimaryKey];
+
+                string entityId = entityIdAttributeValue.S;
+
+                T entity = await LoadEntityFromS3Async(entityId).ConfigureAwait(false);
+
+                if (entity != null)
+                {
+                    entities.Add(entity);
+                }
+            }
+
+            return entities;
         }
 
-        public T GetById(Guid entityId)
+        public async Task<T> GetByIdAsync(Guid entityId)
         {
-            return LoadEntityFromS3(entityId.ToString());
+            return await LoadEntityFromS3Async(entityId.ToString()).ConfigureAwait(false);
         }
 
-        public bool Save(T entity)
+        public async Task<bool> SaveAsync(T entity)
         {
             bool isSaved = false;
 
             try
             {
                 SaveEntityToS3(entity);
-                SaveEntityToDynamoDB(entity);
+                await SaveEntityToDynamoDBAsync(entity).ConfigureAwait(false);
 
                 isSaved = true;
             }
@@ -73,14 +84,14 @@ namespace ClientGraph.Services
             return isSaved;
         }
 
-        public bool Delete(Guid entityId)
+        public async Task<bool> DeleteAsync(Guid entityId)
         {
             bool isDeleted = false;
 
             try
             {
-                DeleteEntityFromS3(entityId);
-                DeleteEntityFromDynamoDB(entityId);
+                await DeleteEntityFromS3Async(entityId).ConfigureAwait(false);
+                await DeleteEntityFromDynamoDBAsync(entityId).ConfigureAwait(false);
 
                 isDeleted = true;
             }
@@ -92,17 +103,17 @@ namespace ClientGraph.Services
             return isDeleted;
         }
 
-        private T LoadEntityFromS3(string contactId)
+        private async Task<T> LoadEntityFromS3Async(string entityId)
         {
             GetObjectRequest getObjectRequest = new GetObjectRequest
             {
                 BucketName = BucketName,
-                Key = contactId
+                Key = entityId
             };
 
             string entityJson;
 
-            using (GetObjectResponse response = _s3Client.GetObject(getObjectRequest))
+            using (GetObjectResponse response = await _s3Client.GetObjectAsync(getObjectRequest).ConfigureAwait(false))
             using (Stream responseStream = response.ResponseStream)
             using (StreamReader reader = new StreamReader(responseStream))
             {
@@ -112,7 +123,7 @@ namespace ClientGraph.Services
             return JsonConvert.DeserializeObject<T>(entityJson);
         }
 
-        private void SaveEntityToDynamoDB(T entity)
+        private async Task SaveEntityToDynamoDBAsync(T entity)
         {
             Table clientGraphTable = Table.LoadTable(_dynamoDbClient, TableName);
 
@@ -120,7 +131,7 @@ namespace ClientGraph.Services
             document[PrimaryKey] = entity.Id.ToString();
             document["description"] = entity.Name;
 
-            clientGraphTable.PutItem(document);
+            await clientGraphTable.PutItemAsync(document).ConfigureAwait(false);
         }
 
         private void SaveEntityToS3(T entity)
@@ -132,14 +143,14 @@ namespace ClientGraph.Services
             _s3Client.PutObject(putObjectRequest);
         }
 
-        private void DeleteEntityFromS3(Guid entityId)
+        private async Task DeleteEntityFromS3Async(Guid entityId)
         {
             DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest { BucketName = BucketName, Key = entityId.ToString() };
 
-            _s3Client.DeleteObject(deleteObjectRequest);
+            await _s3Client.DeleteObjectAsync(deleteObjectRequest).ConfigureAwait(false);
         }
 
-        private void DeleteEntityFromDynamoDB(Guid entityId)
+        private async Task DeleteEntityFromDynamoDBAsync(Guid entityId)
         {
             DeleteItemRequest deleteItemRequest = new DeleteItemRequest
             {
@@ -147,7 +158,7 @@ namespace ClientGraph.Services
                 Key = new Dictionary<string, AttributeValue> { { PrimaryKey, new AttributeValue { S = entityId.ToString() } } }
             };
 
-            _dynamoDbClient.DeleteItem(deleteItemRequest);
+            await _dynamoDbClient.DeleteItemAsync(deleteItemRequest).ConfigureAwait(false);
         }
     }
 }

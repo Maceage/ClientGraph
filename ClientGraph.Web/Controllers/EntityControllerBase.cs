@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using AutoMapper;
 using ClientGraph.Domain;
@@ -20,9 +21,9 @@ namespace ClientGraph.Controllers
             _entityService = Activator.CreateInstance<TService>();
         }
 
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
-            IList<TEntity> entities = _entityService.GetAll();
+            IList<TEntity> entities = await _entityService.GetAllAsync().ConfigureAwait(false);
 
             IList<TModel> entityModels = Mapper.Map<IList<TModel>>(entities);
 
@@ -36,7 +37,7 @@ namespace ClientGraph.Controllers
         }
 
         [HttpPost]
-        public ActionResult Create(TModel model)
+        public async Task<ActionResult> Create(TModel model)
         {
             if (ModelState.IsValid)
             {
@@ -44,7 +45,7 @@ namespace ClientGraph.Controllers
 
                 TEntity entity = Mapper.Map<TEntity>(model);
 
-                _entityService.Save(entity);
+                await _entityService.SaveAsync(entity).ConfigureAwait(false);
 
                 return RedirectToAction("Index");
             }
@@ -53,21 +54,21 @@ namespace ClientGraph.Controllers
         }
 
         [HttpGet]
-        public ActionResult Edit(Guid id)
+        public async Task<ViewResult> Edit(Guid id)
         {
-            TModel entityModel = GetModel(id);
+            TModel entityModel = await GetModelAsync(id).ConfigureAwait(false);
 
             return View(entityModel);
         }
 
         [HttpPost]
-        public ActionResult Edit(TModel model)
+        public async Task<ActionResult> Edit(TModel model)
         {
             if (ModelState.IsValid)
             {
                 TEntity entity = Mapper.Map<TEntity>(model);
 
-                _entityService.Save(entity);
+                await _entityService.SaveAsync(entity).ConfigureAwait(false);
 
                 return RedirectToAction("Details", new { id = model.Id });
             }
@@ -76,32 +77,32 @@ namespace ClientGraph.Controllers
         }
 
         [HttpGet]
-        public ActionResult Details(Guid id)
+        public async Task<ViewResult> Details(Guid id)
         {
-            TModel entityModel = GetModel(id);
+            TModel entityModel = await GetModelAsync(id).ConfigureAwait(false);
 
             return View(entityModel);
         }
 
         [HttpGet]
-        public ActionResult Delete(Guid id)
+        public async Task<ViewResult> Delete(Guid id)
         {
-            TModel model = GetModel(id);
+            TModel model = await GetModelAsync(id).ConfigureAwait(false);
 
             return View(model);
         }
 
         [HttpPost]
-        public ActionResult Delete(TEntity entity)
+        public async Task<RedirectToRouteResult> Delete(TEntity entity)
         {
-            _entityService.Delete(entity.Id);
+            await _entityService.DeleteAsync(entity.Id).ConfigureAwait(false);
 
             return RedirectToAction("Index");
         }
 
-        private TModel GetModel(Guid id)
+        private async Task<TModel> GetModelAsync(Guid id)
         {
-            TEntity entity = _entityService.GetById(id);
+            TEntity entity = await _entityService.GetByIdAsync(id).ConfigureAwait(false);
 
             return Mapper.Map<TModel>(entity);
         }

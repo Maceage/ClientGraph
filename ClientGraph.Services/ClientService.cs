@@ -6,10 +6,10 @@ namespace ClientGraph.Services
     {
         private const string PrimaryKey = "clientId";
         private const string TableName = "clients-graph-table";
-        private const string BucketName = "clients";
+        private const string FolderName = "clients";
 
         public ClientService()
-            : base(PrimaryKey, TableName, BucketName)
+            : base(PrimaryKey, TableName, FolderName)
         {
         }
     }

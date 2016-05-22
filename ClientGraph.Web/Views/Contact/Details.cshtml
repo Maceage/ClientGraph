@@ -1,13 +1,14 @@
 ﻿@model ClientGraph.Models.ContactModel
 
 @{
-    ViewBag.Title = "Details";
+    ViewBag.Title = "Contact Details";
 }
 
-<h2>Details</h2>
+<h2>Contact Details</h2>
 
 <div>
-    <h4>Contact</h4>
+    <hr />
+    <h4>Details</h4>
     <hr />
     <dl class="dl-horizontal">
         <dt>
@@ -44,6 +45,38 @@
 
     </dl>
 </div>
+
+<div>
+    <hr />
+    <h4>Versions</h4>
+    <table class="table">
+        <tr>
+            <th>
+                Version Number
+            </th>
+            <th>
+                Date
+            </th>
+            <th></th>
+        </tr>
+
+        @foreach (var item in Model.Versions)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.VersionNumber)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.LastModified)
+                </td>
+                <td>
+                    @Html.ActionLink("Restore", "RestoreVersion", new { id = item.VersionId })
+                </td>
+            </tr>
+        }
+    </table>
+</div>
+
 <p>
     @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
     @Html.ActionLink("Back to List", "Index")

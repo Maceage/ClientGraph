@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -19,35 +20,37 @@ namespace ClientGraph.Services
         private readonly IAmazonS3 _s3Client;
         private readonly IAmazonDynamoDB _dynamoDbClient;
 
-        private readonly string PrimaryKey;
-        private readonly string TableName;
-        private readonly string BucketName;
+        private readonly string _primaryKey;
+        private readonly string _tableName;
+        private readonly string _bucketPath;
+        private readonly string _folderName;
 
-        private string BucketPrefix = "client-graph-data/";
+        private string BucketName = "client-graph-data/";
 
-        protected EntityService(string primaryKey, string tableName, string bucketName)
+        protected EntityService(string primaryKey, string tableName, string folderName)
         {
             _s3Client = new AmazonS3Client();
             _dynamoDbClient = new AmazonDynamoDBClient();
 
-            PrimaryKey = primaryKey;
-            TableName = tableName;
-            BucketName = BucketPrefix + bucketName;
+            _primaryKey = primaryKey;
+            _tableName = tableName;
+            _folderName = folderName;
+            _bucketPath = BucketName + folderName;
         }
 
         public async Task<IList<T>> GetAllAsync()
         {
             IList<T> entities = new List<T>();
 
-            ScanRequest scanRequest = new ScanRequest(TableName);
+            ScanRequest scanRequest = new ScanRequest(_tableName);
 
             ScanResponse response = await _dynamoDbClient.ScanAsync(scanRequest).ConfigureAwait(false);
 
             foreach (var item in response.Items)
             {
-                AttributeValue entityIdAttributeValue = item[PrimaryKey];
+                AttributeValue entityIdAttributeValue = item[_primaryKey];
 
-                string entityId = entityIdAttributeValue.S;
+                Guid entityId = new Guid(entityIdAttributeValue.S);
 
                 T entity = await LoadEntityFromS3Async(entityId).ConfigureAwait(false);
 
@@ -62,7 +65,14 @@ namespace ClientGraph.Services
 
         public async Task<T> GetByIdAsync(Guid entityId)
         {
-            return await LoadEntityFromS3Async(entityId.ToString()).ConfigureAwait(false);
+            T entity = await LoadEntityFromS3Async(entityId).ConfigureAwait(false);
+
+            if (entity != null)
+            {
+                entity.Versions = await LoadEntityVersionsFromS3Async(entityId).ConfigureAwait(false);
+            }
+
+            return entity;
         }
 
         public async Task<bool> SaveAsync(T entity)
@@ -103,12 +113,12 @@ namespace ClientGraph.Services
             return isDeleted;
         }
 
-        private async Task<T> LoadEntityFromS3Async(string entityId)
+        private async Task<T> LoadEntityFromS3Async(Guid entityId)
         {
             GetObjectRequest getObjectRequest = new GetObjectRequest
             {
-                BucketName = BucketName,
-                Key = entityId
+                BucketName = _bucketPath,
+                Key = entityId.ToString()
             };
 
             string entityJson;
@@ -123,12 +133,44 @@ namespace ClientGraph.Services
             return JsonConvert.DeserializeObject<T>(entityJson);
         }
 
+        private async Task<IList<EntityVersion>> LoadEntityVersionsFromS3Async(Guid entityId)
+        {
+            IList<EntityVersion> entityVersions = new List<EntityVersion>();
+
+            ListVersionsRequest listVersionsRequest = new ListVersionsRequest
+            {
+                BucketName = BucketName,
+                Prefix = _folderName + "/" + entityId,
+            };
+
+            ListVersionsResponse response = await _s3Client.ListVersionsAsync(listVersionsRequest).ConfigureAwait(false);
+
+            int versionNumber = 1;
+
+            foreach (S3ObjectVersion s3ObjectVersion in response.Versions.OrderBy(v => v.LastModified))
+            {
+                EntityVersion entityVersion = new EntityVersion
+                {
+                    VersionId = s3ObjectVersion.VersionId,
+                    VersionNumber = versionNumber,
+                    LastModified = s3ObjectVersion.LastModified,
+                    Size = s3ObjectVersion.Size
+                };
+
+                versionNumber++;
+
+                entityVersions.Add(entityVersion);
+            }
+
+            return entityVersions;
+        }
+
         private async Task SaveEntityToDynamoDBAsync(T entity)
         {
-            Table clientGraphTable = Table.LoadTable(_dynamoDbClient, TableName);
+            Table clientGraphTable = Table.LoadTable(_dynamoDbClient, _tableName);
 
             Document document = new Document();
-            document[PrimaryKey] = entity.Id.ToString();
+            document[_primaryKey] = entity.Id.ToString();
             document["description"] = entity.Name;
 
             await clientGraphTable.PutItemAsync(document).ConfigureAwait(false);
@@ -138,14 +180,14 @@ namespace ClientGraph.Services
         {
             string clientJson = JsonConvert.SerializeObject(entity);
 
-            PutObjectRequest putObjectRequest = new PutObjectRequest { BucketName = BucketName, Key = entity.Id.ToString(), ContentBody = clientJson };
+            PutObjectRequest putObjectRequest = new PutObjectRequest { BucketName = _bucketPath, Key = entity.Id.ToString(), ContentBody = clientJson };
 
             _s3Client.PutObject(putObjectRequest);
         }
 
         private async Task DeleteEntityFromS3Async(Guid entityId)
         {
-            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest { BucketName = BucketName, Key = entityId.ToString() };
+            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest { BucketName = _bucketPath, Key = entityId.ToString() };
 
             await _s3Client.DeleteObjectAsync(deleteObjectRequest).ConfigureAwait(false);
         }
@@ -154,8 +196,8 @@ namespace ClientGraph.Services
         {
             DeleteItemRequest deleteItemRequest = new DeleteItemRequest
             {
-                TableName = TableName,
-                Key = new Dictionary<string, AttributeValue> { { PrimaryKey, new AttributeValue { S = entityId.ToString() } } }
+                TableName = _tableName,
+                Key = new Dictionary<string, AttributeValue> { { _primaryKey, new AttributeValue { S = entityId.ToString() } } }
             };
 
             await _dynamoDbClient.DeleteItemAsync(deleteItemRequest).ConfigureAwait(false);

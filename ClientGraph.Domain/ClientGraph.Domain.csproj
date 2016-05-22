@@ -44,6 +44,7 @@
     <Compile Include="Contact.cs" />
     <Compile Include="EntityBase.cs" />
     <Compile Include="EntityNode.cs" />
+    <Compile Include="EntityVersion.cs" />
     <Compile Include="Enumerations\EntityType.cs" />
     <Compile Include="Enumerations\RelationshipType.cs" />
     <Compile Include="Practice.cs" />

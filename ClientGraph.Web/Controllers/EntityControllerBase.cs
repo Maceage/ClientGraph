@@ -100,6 +100,11 @@ namespace ClientGraph.Controllers
             return RedirectToAction("Index");
         }
 
+        public ActionResult RestoreVersion(string versionId)
+        {
+            throw new System.NotImplementedException();
+        }
+
         private async Task<TModel> GetModelAsync(Guid id)
         {
             TEntity entity = await _entityService.GetByIdAsync(id).ConfigureAwait(false);

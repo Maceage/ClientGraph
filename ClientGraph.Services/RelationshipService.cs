@@ -42,11 +42,13 @@ namespace ClientGraph.Services
 
             using (GraphClient graphClient = CreateClient())
             {
+                string relationshipTypeString = GetRelationshipTypeString(entityRelationship.RelationshipType);
+
                  graphClient.Cypher
                     .Match("(pe:" + parentEntityType + ")", "(ce:" + childEntityType + ")")
                     .Where((EntityNode pe) => pe.EntityId == parentNode.EntityId)
                     .AndWhere((EntityNode ce) => ce.EntityId == childNode.EntityId)
-                    .CreateUnique("(pe)-[:RELATES_TO]->(ce)")
+                    .CreateUnique("(ce)-[:" + relationshipTypeString + "]->(pe)")
                     .ExecuteWithoutResults();
             }
         }
@@ -75,15 +77,26 @@ namespace ClientGraph.Services
                     .Merge("(entity:" + entityType + " {entityId: {entityId} })")
                     .OnCreate()
                     .Set("entity = {newEntity}")
-                    .WithParams(new
-                    {
-                        entityId = entityNode.EntityId,
-                        newEntity = entityNode
-                    })
+                    .WithParams(new { entityId = entityNode.EntityId, newEntity = entityNode })
                     .ExecuteWithoutResults();
             }
 
             return entityNode;
+        }
+
+        private static string GetRelationshipTypeString(RelationshipType relationshipType)
+        {
+            switch (relationshipType)
+            {
+                case RelationshipType.ClientOf:
+                    return "CLIENT_OF";
+                case RelationshipType.ContactOf:
+                    return "CONTACT_OF";
+                case RelationshipType.BusinessWith:
+                    return "BUSINESS_WITH";
+                default:
+                    throw new InvalidEnumArgumentException(nameof(relationshipType));
+            }
         }
 
         private EntityBase GetEntity(EntityType entityType, Guid entityId)

@@ -22,5 +22,9 @@ namespace ClientGraph.Models
         [DisplayName("Child Entity")]
         [Required]
         public Guid? ChildEntityId { get; set; }
+
+        [DisplayName("Relationship Type")]
+        [Required]
+        public RelationshipType RelationshipType { get; set; }
     }
 }

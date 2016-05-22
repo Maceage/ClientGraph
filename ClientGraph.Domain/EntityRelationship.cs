@@ -10,5 +10,7 @@ namespace ClientGraph.Domain
 
         public EntityType ChildEntityType { get; set; }
         public Guid ChildEntityId { get; set; }
+
+        public RelationshipType RelationshipType { get; set; }
     }
 }

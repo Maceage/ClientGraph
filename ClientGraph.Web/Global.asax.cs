@@ -2,6 +2,7 @@
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
+using ClientGraph.Mapping;
 
 namespace ClientGraph
 {
@@ -13,6 +14,8 @@ namespace ClientGraph
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+
+            AutoMapperConfiguration.Initialize();
         }
     }
 }

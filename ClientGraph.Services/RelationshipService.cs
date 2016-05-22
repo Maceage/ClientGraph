@@ -55,10 +55,6 @@ namespace ClientGraph.Services
             }
         }
 
-        public void DeleteRelationshipAsync(EntityBase parent, EntityBase child)
-        {
-        }
-
         private static GraphClient CreateClient()
         {
             GraphClient graphClient = new GraphClient(new Uri(GrapheneEndpoint), GrapheneUsername, GraphenePassword);

@@ -81,7 +81,7 @@ namespace ClientGraph.Services
 
             try
             {
-                SaveEntityToS3(entity);
+                await SaveEntityToS3Async(entity).ConfigureAwait(false);
                 await SaveEntityToDynamoDBAsync(entity).ConfigureAwait(false);
 
                 isSaved = true;
@@ -199,13 +199,13 @@ namespace ClientGraph.Services
             await clientGraphTable.PutItemAsync(document).ConfigureAwait(false);
         }
 
-        private void SaveEntityToS3(T entity)
+        private async Task SaveEntityToS3Async(T entity)
         {
             string entityJson = JsonConvert.SerializeObject(entity);
 
             PutObjectRequest putObjectRequest = new PutObjectRequest { BucketName = _bucketPath, Key = entity.Id.ToString(), ContentBody = entityJson };
 
-            _s3Client.PutObject(putObjectRequest);
+            await _s3Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
         }
 
         private async Task DeleteEntityFromS3Async(Guid entityId)

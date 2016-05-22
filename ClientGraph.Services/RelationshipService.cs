@@ -49,7 +49,7 @@ namespace ClientGraph.Services
                     .Match("(pe:" + parentEntityType + ")", "(ce:" + childEntityType + ")")
                     .Where((EntityNode pe) => pe.EntityId == parentNode.EntityId)
                     .AndWhere((EntityNode ce) => ce.EntityId == childNode.EntityId)
-                    .CreateUnique("(ce)-[:" + relationshipTypeString + "]->(pe)")
+                    .CreateUnique("(pe)-[:" + relationshipTypeString + "]->(ce)")
                     .ExecuteWithoutResultsAsync()
                     .ConfigureAwait(false);
             }
